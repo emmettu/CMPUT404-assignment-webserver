@@ -33,9 +33,8 @@ class MyWebServer(SocketServer.BaseRequestHandler):
     def setup(self):
         self.end = "\n\r"
         self.protocol = "HTTP/1.0"
-        self.headers = {
-            "Content-Type:" : "text/html"
-        }
+        self.mimes = {"css" : "text/css", "html" : "text/html"}
+        self.headers = {}
 
     def handle(self):
         self.data = self.request.recv(1024).strip()
@@ -59,12 +58,22 @@ class MyWebServer(SocketServer.BaseRequestHandler):
 
     def respond(self):
         status_line = "%s %s" % (self.protocol, self.response)
+        self.set_ctype()
         response = status_line + self.end + self.build_headers() + self.end + self.payload
         # print(response)
         self.request.sendall(response)
 
+    def set_ctype(self):
+        self.headers["Content-Type: "] = self.get_mime()
+
     def build_headers(self):
         return "\n".join([("%s %s%s" % (k, v, self.end)) for k, v in self.headers.iteritems()])
+
+    def add_header(self, key, value):
+        self.headers[key] = value
+
+    def get_mime(self):
+        return self.mimes[self.path.split(".")[-1]]
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
