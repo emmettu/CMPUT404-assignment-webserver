@@ -1,14 +1,14 @@
-#  coding: utf-8 
+#  coding: utf-8
 import SocketServer
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,11 +28,34 @@ import SocketServer
 
 
 class MyWebServer(SocketServer.BaseRequestHandler):
-    
+
+    def setup(self):
+        self.end = "\n\r"
+        self.protocol = "HTTP/1.0"
+        self.headers = {
+            "Content-Type:" : "text/html"
+        }
+
     def handle(self):
         self.data = self.request.recv(1024).strip()
         print ("Got a request of: %s\n" % self.data)
-        self.request.sendall("OK")
+        self.payload = self.read_file()
+        #self.headers["Content-Length:"] = len(self.payload)
+        self.response = "200 OK"
+        self.respond()
+
+    def read_file(self):
+        with open("./www/index.html", "r") as f:
+            return f.read()
+
+    def respond(self):
+        status_line = "%s %s" % (self.protocol, self.response)
+        response = status_line + self.end + self.build_headers() + self.end + self.payload
+        print(response)
+        self.request.sendall(response)
+
+    def build_headers(self):
+        return "\n".join([("%s %s%s" % (k, v, self.end)) for k, v in self.headers.iteritems()])
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
