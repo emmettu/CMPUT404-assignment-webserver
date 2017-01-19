@@ -36,13 +36,13 @@ class MyWebServer(SocketServer.BaseRequestHandler):
         self.protocol = "HTTP/1.0"
         self.mimes = {"css" : "text/css", "html" : "text/html"}
         self.headers = {"Content-Type:" : "text/plain"}
+        self.response = "200 OK"
 
     def handle(self):
         self.data = self.request.recv(1024).strip()
         self.request_header = self.data.split("\n")[0]
         print ("Got a request of: %s\n" % self.data)
         self.parse_request()
-        self.response = "200 OK"
         self.payload = self.read_file()
         self.respond()
 
@@ -51,9 +51,9 @@ class MyWebServer(SocketServer.BaseRequestHandler):
         if path.endswith("/"):
             path += "index.html"
         if self.method != "GET":
-            raise urllib2.error(405)
+            self.response = "405 Method Not Allowed"
+        path = os.path.abspath(path)
         self.path = "./www" + path
-        print(self.path, self.method)
 
     def read_file(self):
         try:
