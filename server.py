@@ -1,6 +1,7 @@
 #  coding: utf-8
 import SocketServer
 import os
+import urllib2
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 #
@@ -31,49 +32,59 @@ import os
 class MyWebServer(SocketServer.BaseRequestHandler):
 
     def setup(self):
-        self.end = "\n\r"
+        self.end = "\r\n"
         self.protocol = "HTTP/1.0"
         self.mimes = {"css" : "text/css", "html" : "text/html"}
-        self.headers = {}
+        self.headers = {"Content-Type:" : "text/plain"}
 
     def handle(self):
         self.data = self.request.recv(1024).strip()
         self.request_header = self.data.split("\n")[0]
         print ("Got a request of: %s\n" % self.data)
         self.parse_request()
-        self.payload = self.read_file()
         self.response = "200 OK"
+        self.payload = self.read_file()
         self.respond()
 
     def parse_request(self):
         self.method, path, _ = self.request_header.split(" ")
         if path.endswith("/"):
             path += "index.html"
+        if self.method != "GET":
+            raise urllib2.error(405)
         self.path = "./www" + path
         print(self.path, self.method)
 
     def read_file(self):
-        with open(self.path, "r") as f:
-            return f.read()
+        try:
+            with open(self.path, "r") as f:
+                return f.read()
+        except IOError:
+            self.response = "404 Not Found"
+            return ""
 
     def respond(self):
         status_line = "%s %s" % (self.protocol, self.response)
         self.set_ctype()
-        response = status_line + self.end + self.build_headers() + self.end + self.payload
+        print(self.build_headers())
+        response = status_line + self.end + self.build_headers() + self.end + self.payload + self.end
         # print(response)
         self.request.sendall(response)
 
     def set_ctype(self):
-        self.headers["Content-Type: "] = self.get_mime()
+        self.headers["Content-Type:"] = self.get_mime()
 
     def build_headers(self):
-        return "\n".join([("%s %s%s" % (k, v, self.end)) for k, v in self.headers.iteritems()])
+        return self.end.join([("%s %s" % (k, v)) for k, v in self.headers.iteritems()])
 
     def add_header(self, key, value):
         self.headers[key] = value
 
     def get_mime(self):
-        return self.mimes[self.path.split(".")[-1]]
+        file_ext = self.path.split(".")[-1]
+        if not file_ext in self.mimes:
+            return "text/plain"
+        return self.mimes[file_ext]
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
