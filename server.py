@@ -1,5 +1,6 @@
 #  coding: utf-8
 import SocketServer
+import os
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 #
@@ -38,20 +39,28 @@ class MyWebServer(SocketServer.BaseRequestHandler):
 
     def handle(self):
         self.data = self.request.recv(1024).strip()
+        self.request_header = self.data.split("\n")[0]
         print ("Got a request of: %s\n" % self.data)
+        self.parse_request()
         self.payload = self.read_file()
-        #self.headers["Content-Length:"] = len(self.payload)
         self.response = "200 OK"
         self.respond()
 
+    def parse_request(self):
+        self.method, path, _ = self.request_header.split(" ")
+        if path.endswith("/"):
+            path += "index.html"
+        self.path = "./www" + path
+        print(self.path, self.method)
+
     def read_file(self):
-        with open("./www/index.html", "r") as f:
+        with open(self.path, "r") as f:
             return f.read()
 
     def respond(self):
         status_line = "%s %s" % (self.protocol, self.response)
         response = status_line + self.end + self.build_headers() + self.end + self.payload
-        print(response)
+        # print(response)
         self.request.sendall(response)
 
     def build_headers(self):
