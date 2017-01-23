@@ -67,7 +67,7 @@ class MyWebServer(SocketServer.BaseRequestHandler):
         status_line = "%s %s" % (self.protocol, self.response)
         self.set_ctype()
         print(self.build_headers())
-        response = status_line + self.end + self.build_headers() + self.end + self.payload + self.end
+        response = status_line + self.end + self.build_headers() + self.end + self.end + self.payload + self.end
         # print(response)
         self.request.sendall(response)
 
