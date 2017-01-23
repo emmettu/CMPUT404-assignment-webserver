@@ -73,7 +73,6 @@
      bash runner.sh
    - Marks will be deducted if I cannot successfully do this.
      
-   
 ** Marking
    - 4 Marks for passing all of freetests.py
    - 2 Marks for passing all of not-free-tests.py
